@@ -18,13 +18,24 @@ repositories {
 }
 
 dependencies {
+
+	/* Spring Boot */
 	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-configuration-processor:3.4.3'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	/* Lombok */
-	compileOnly 'org.projectlombok:lombok'
+	compileOnly 'org.projectlombok:lombok:1.18.36'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	/* Apache POI for Excel worksheets */
+	implementation 'org.apache.poi:poi:5.4.0'
+	implementation 'org.apache.poi:poi-ooxml:5.4.0'
+
+	/* QR code generator */
+	implementation 'io.nayuki:qrcodegen:1.8.0'
 }
 
 tasks.named('test') {
