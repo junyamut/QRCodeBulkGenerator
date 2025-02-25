@@ -3,3 +3,8 @@ spring:
     name: QrCodeBulkGenApplication
   profiles:
     active: dev
+
+data-store:
+  workbook-name: "qr-code-list.xlsx"
+  source-dir: datastore/workbook/
+  destination-dir: datastore/qr-codes/
