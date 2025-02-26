@@ -1,14 +1,19 @@
 package xyz.joseyamut.qrCodeBulkGen.service;
 
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @Slf4j
@@ -17,82 +22,77 @@ public class WorkbookReaderService {
 
     private final String workbookName;
     private final String sourceDir;
-    private final String destinationDir;
 
     private static final String NEWLINE = System.lineSeparator();
 
-    public WorkbookReaderService(String workbookName, String sourceDir, String destinationDir) {
+    public WorkbookReaderService(String workbookName, String sourceDir) {
         this.workbookName = workbookName;
         this.sourceDir = sourceDir;
-        this.destinationDir = destinationDir;
     }
 
-    @PostConstruct
-    public void init() throws IOException {
-        log.info("Workbook Name: {}", workbookName);
-        log.info("Source Dir: {}", sourceDir);
-        log.info("Destination Dir: {}", destinationDir);
-
-        log.info("{}", readExcel(sourceDir, workbookName));
-
-    }
-
-    public static String readExcel(String filePath, String fileName) throws IOException {
-        File file = new File(filePath, fileName);
-        FileInputStream fileInputStream;
-        StringBuilder toReturn = new StringBuilder();
-        try {
-            fileInputStream = new FileInputStream(file);
-            Workbook workbook = new XSSFWorkbook(fileInputStream);
-            for (Sheet sheet : workbook) {
-                toReturn.append(NEWLINE);
-                toReturn.append("Reading at worksheet: ")
-                        .append(sheet.getSheetName())
-                        .append(NEWLINE);
-                toReturn.append(NEWLINE);
-
-                int firstRow = sheet.getFirstRowNum();
-                int lastRow = sheet.getLastRowNum();
-
-                for (int index = firstRow + 1; index <= lastRow; index++) {
-                    Row row = sheet.getRow(index);
-
-                    for (int cellIndex = row.getFirstCellNum(); cellIndex < row.getLastCellNum(); cellIndex++) {
-                        Cell cell = row.getCell(cellIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                        printCellValue(cell, toReturn);
-                    }
-                    toReturn.append(NEWLINE);
-                }
-            }
-            fileInputStream.close();
-            workbook.close();
-
-        } catch (IOException e) {
-            throw e;
+    public Map<String, String> getListFromWorkbook() throws IOException {
+        Path path = Paths.get(sourceDir + File.separator + workbookName);
+        if (!Files.exists(path)) {
+            throw new IllegalArgumentException("Can't find list! Create Excel workbook @ ./datastore/workbook/ with filename of 'qr-code-list.xlsx'.");
         }
 
-        return toReturn.toString();
+        Map<String, String> rowMap = new HashMap<>();
+        StringBuilder rowValue = new StringBuilder();
+
+        File file = new File(sourceDir, workbookName);
+        FileInputStream fileInputStream = new FileInputStream(file);
+        Workbook workbook = new XSSFWorkbook(fileInputStream);
+
+        for (Sheet sheet : workbook) {
+            int firstRow = sheet.getFirstRowNum();
+            int lastRow = sheet.getLastRowNum();
+
+            for (int index = firstRow + 1; index <= lastRow; index++) {
+                Row row = sheet.getRow(index);
+                Cell nameCell = row.getCell(0, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                String nameValue = getCellValue(nameCell).replaceAll("\\s", "");
+
+                if (!StringUtils.hasText(nameValue)) {
+                    continue;
+                }
+
+                for (int cellIndex = row.getFirstCellNum(); cellIndex < row.getLastCellNum(); cellIndex++) {
+                    Cell cell = row.getCell(cellIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    rowValue.append(getCellValue(cell));
+                }
+                rowMap.put(nameValue.trim(), rowValue.toString().trim());
+                rowValue.setLength(0);
+            }
+        }
+
+        fileInputStream.close();
+        workbook.close();
+
+        return rowMap;
     }
 
-    private static void printCellValue(Cell cell, StringBuilder toReturn) {
+    private String getCellValue(Cell cell) {
+        String value = "";
         CellType cellType = cell.getCellType()
                 .equals(CellType.FORMULA) ? cell.getCachedFormulaResultType() : cell.getCellType();
 
         switch (cellType) {
             case STRING:
-                toReturn.append(cell.getStringCellValue()).append(NEWLINE);
+                value += cell.getStringCellValue() + NEWLINE;
                 break;
             case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) {
-                    toReturn.append(cell.getDateCellValue()).append(NEWLINE);;
+                    value += cell.getDateCellValue() + NEWLINE;
                 } else {
-                    toReturn.append(cell.getNumericCellValue()).append(NEWLINE);;
+                    value += cell.getNumericCellValue() + NEWLINE;
                 }
                 break;
             case BOOLEAN:
             default:
-                toReturn.append(" ").append(NEWLINE);;
+                value += " " + NEWLINE;
         }
+
+        return value;
     }
 
 }
