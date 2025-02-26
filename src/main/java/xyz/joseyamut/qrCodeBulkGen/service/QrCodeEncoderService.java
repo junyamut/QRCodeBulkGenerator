@@ -2,6 +2,7 @@ package xyz.joseyamut.qrCodeBulkGen.service;
 
 import io.nayuki.qrcodegen.QrCode;
 import org.springframework.stereotype.Service;
+import xyz.joseyamut.qrCodeBulkGen.QrCodeBulkGenAppException;
 
 import java.awt.image.BufferedImage;
 
@@ -30,18 +31,18 @@ public class QrCodeEncoderService {
                 darkColor);
     }
 
-    private BufferedImage toImage(QrCode qrCode, int scale, int border, int lightColor, int darkColor) {
+    private BufferedImage toImage(QrCode qrCode, int scale, int border, int lightColor, int darkColor) throws QrCodeBulkGenAppException {
         if (qrCode == null) {
-            throw new IllegalArgumentException("QrCode object must have a non-null value!");
+            throw new QrCodeBulkGenAppException("QrCode object must have a non-null value!");
         }
 
         if (scale <= 0 || border < 0) {
-            throw new IllegalArgumentException("Invalid values provided for scale and/or border!");
+            throw new QrCodeBulkGenAppException("Invalid values provided for scale and/or border!");
         }
 
         if (border > (Integer.MAX_VALUE / 2)
                 || (qrCode.size + border * 2L) > (Integer.MAX_VALUE) / scale) {
-            throw new IllegalArgumentException("Provided values for scale and/or border too large!");
+            throw new QrCodeBulkGenAppException("Provided values for scale and/or border too large!");
         }
 
         BufferedImage bufferedImage = new BufferedImage((qrCode.size + border * 2) * scale,

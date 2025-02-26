@@ -36,6 +36,10 @@ dependencies {
 
 	/* QR code generator */
 	implementation 'io.nayuki:qrcodegen:1.8.0'
+
+	/* Apache Commons */
+	implementation 'commons-io:commons-io:2.18.0'
+
 }
 
 tasks.named('test') {
