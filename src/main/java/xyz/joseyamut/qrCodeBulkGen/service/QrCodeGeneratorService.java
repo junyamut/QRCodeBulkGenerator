@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import xyz.joseyamut.qrCodeBulkGen.QrCodeBulkGenAppException;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -22,12 +23,16 @@ public class QrCodeGeneratorService {
     @Autowired
     private QrCodeEncoderService qrCodeEncoderService;
 
-    private final String filenamePrefix;
     private final String destinationDir;
+    private final String filenamePrefix;
+    private final String formatName;
 
-    public QrCodeGeneratorService(String destinationDir, String filenamePrefix) {
+    private static final String NEWLINE = System.lineSeparator();
+
+    public QrCodeGeneratorService(String destinationDir, String filenamePrefix, String formatName) {
         this.destinationDir = destinationDir;
         this.filenamePrefix = filenamePrefix;
+        this.formatName = formatName;
     }
 
     @PostConstruct
@@ -35,21 +40,27 @@ public class QrCodeGeneratorService {
         Map<String, String> fromWorkbook = workbookReaderService.getListFromWorkbook();
 
         assert fromWorkbook != null;
+        String successFormat = "Found a total of %s rows from the list." + NEWLINE + NEWLINE +
+                "QR Codes generated as %s format are saved in %s folder.";
+        String successMessage = String.format(successFormat,
+                fromWorkbook.size(),
+                formatName.toUpperCase(),
+                destinationDir);
         log.info("Found {} rows from the list.", fromWorkbook.size());
 
         fromWorkbook.forEach((key, value) -> {
-            log.debug("Key: {}, Value: {}", key, value);
-
             try {
                 BufferedImage bufferedImage = qrCodeEncoderService.generate(value);
-
-                File outputfile = new File(destinationDir + filenamePrefix + key + ".jpg");
-
-                ImageIO.write(bufferedImage, "jpg", outputfile);
+                File outputfile = new File(destinationDir +
+                        filenamePrefix + key +
+                        "." + formatName);
+                ImageIO.write(bufferedImage, formatName, outputfile);
             } catch (IOException e) {
                 throw new QrCodeBulkGenAppException(e);
             }
         });
+
+        JOptionPane.showMessageDialog(null, successMessage, "QR Code Bulk Generator", JOptionPane.INFORMATION_MESSAGE);
     }
 
 }

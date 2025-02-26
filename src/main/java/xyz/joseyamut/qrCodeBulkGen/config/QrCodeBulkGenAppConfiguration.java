@@ -38,7 +38,8 @@ public class QrCodeBulkGenAppConfiguration {
     @Bean
     public QrCodeGeneratorService qrCodeGeneratorService() {
         return new QrCodeGeneratorService(storeImageConfiguration.getDataStore().getDestinationDir(),
-                storeImageConfiguration.getImageParam().getFilenamePrefix());
+                storeImageConfiguration.getImageParam().getFilenamePrefix(),
+                storeImageConfiguration.getImageParam().getFormatName());
     }
 
     @PostConstruct

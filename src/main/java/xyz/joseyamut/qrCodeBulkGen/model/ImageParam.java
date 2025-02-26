@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class ImageParam {
 
+    public String formatName;
     public String filenamePrefix;
     public int scale;
     public int border;

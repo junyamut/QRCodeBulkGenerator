@@ -10,6 +10,7 @@ qr-code:
     source-dir: datastore/workbook/
     destination-dir: datastore/qr-codes/
   image-param:
+    format-name: jpg
     filename-prefix: QRCode-
     scale: 10
     border: 2
