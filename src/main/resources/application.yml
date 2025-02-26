@@ -4,7 +4,21 @@ spring:
   profiles:
     active: dev
 
-data-store:
-  workbook-name: "qr-code-list.xlsx"
-  source-dir: datastore/workbook/
-  destination-dir: datastore/qr-codes/
+qr-code:
+  data-store:
+    workbook-name: "qr-code-list.xlsx"
+    source-dir: datastore/workbook/
+    destination-dir: datastore/qr-codes/
+  image-param:
+    filename-prefix: DEMO-
+    scale: 10
+    border: 2
+    light-color: 0xFFFFFF # white
+    dark-color: 0x003e2a # green
+
+logging:
+  level:
+    root: error
+    xyz.joseyamut.qrCodeBulkGen:
+      service: debug
+
