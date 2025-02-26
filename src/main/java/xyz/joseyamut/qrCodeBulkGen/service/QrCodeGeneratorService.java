@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import xyz.joseyamut.qrCodeBulkGen.QrCodeBulkGenAppException;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -31,25 +32,22 @@ public class QrCodeGeneratorService {
 
     @PostConstruct
     private void generateFromList() {
-        Map<String, String> fromWorkbook = null;
+        Map<String, String> fromWorkbook = workbookReaderService.getListFromWorkbook();
 
-        try {
-            fromWorkbook = workbookReaderService.getListFromWorkbook();
-        } catch (IOException e) {
-            log.error("Could not read from workbook: {}", e.getMessage());
-        }
-
+        assert fromWorkbook != null;
         log.info("Found {} rows from the list.", fromWorkbook.size());
 
         fromWorkbook.forEach((key, value) -> {
             log.debug("Key: {}, Value: {}", key, value);
-            BufferedImage bufferedImage = qrCodeEncoderService.generate(value);
-            File outputfile = new File(destinationDir + filenamePrefix + key + ".jpg");
 
             try {
+                BufferedImage bufferedImage = qrCodeEncoderService.generate(value);
+
+                File outputfile = new File(destinationDir + filenamePrefix + key + ".jpg");
+
                 ImageIO.write(bufferedImage, "jpg", outputfile);
             } catch (IOException e) {
-                log.error("Could not write to destination dir: {}", e.getMessage());
+                throw new QrCodeBulkGenAppException(e);
             }
         });
     }

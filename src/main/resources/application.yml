@@ -10,7 +10,7 @@ qr-code:
     source-dir: datastore/workbook/
     destination-dir: datastore/qr-codes/
   image-param:
-    filename-prefix: DEMO-
+    filename-prefix: QRCode-
     scale: 10
     border: 2
     light-color: 0xFFFFFF # white
@@ -18,7 +18,6 @@ qr-code:
 
 logging:
   level:
-    root: error
     xyz.joseyamut.qrCodeBulkGen:
       service: debug
 

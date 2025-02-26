@@ -43,10 +43,12 @@ public class QrCodeBulkGenAppConfiguration {
 
     @PostConstruct
     public void dirCheck() {
-        Path qrCodeOutputDir = Paths.get(storeImageConfiguration.getDataStore().getDestinationDir());
+        String destinationDir = storeImageConfiguration.getDataStore().getDestinationDir();
+        Path qrCodeOutputDir = Paths.get(destinationDir);
         if (!Files.exists(qrCodeOutputDir)) {
-            File createDir = new File(storeImageConfiguration.getDataStore().getDestinationDir());
+            File createDir = new File(destinationDir);
             createDir.mkdirs();
+            log.info("Created destination dir: {}", destinationDir);
         }
     }
 
