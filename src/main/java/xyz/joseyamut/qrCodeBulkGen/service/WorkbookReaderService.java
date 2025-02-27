@@ -23,7 +23,7 @@ public class WorkbookReaderService {
     private final String workbookName;
     private final String sourceDir;
 
-    private static final String NEWLINE = System.lineSeparator();
+    public static final String NEWLINE = System.lineSeparator();
 
     public WorkbookReaderService(String workbookName, String sourceDir) {
         this.workbookName = workbookName;

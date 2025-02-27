@@ -29,7 +29,7 @@ public class QrCodeBulkGenAppConfiguration {
 
     @Bean
     public QrCodeEncoderService qrCodeEncoderService() {
-        return new QrCodeEncoderService(storeImageConfiguration.getImageParam().scale,
+        return new QrCodeEncoderService(storeImageConfiguration.getImageParam().getScale(),
                 storeImageConfiguration.getImageParam().getBorder(),
                 storeImageConfiguration.getImageParam().getLightColor(),
                 storeImageConfiguration.getImageParam().getDarkColor());
@@ -48,8 +48,9 @@ public class QrCodeBulkGenAppConfiguration {
         Path qrCodeOutputDir = Paths.get(destinationDir);
         if (!Files.exists(qrCodeOutputDir)) {
             File createDir = new File(destinationDir);
-            createDir.mkdirs();
-            log.info("Created destination dir: {}", destinationDir);
+            if (createDir.mkdirs()) {
+                log.info("Created destination dir: {}", destinationDir);
+            }
         }
     }
 

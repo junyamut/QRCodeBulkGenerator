@@ -13,6 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import static xyz.joseyamut.qrCodeBulkGen.service.WorkbookReaderService.NEWLINE;
+
 @Slf4j
 @Service
 public class QrCodeGeneratorService {
@@ -26,8 +28,6 @@ public class QrCodeGeneratorService {
     private final String destinationDir;
     private final String filenamePrefix;
     private final String formatName;
-
-    private static final String NEWLINE = System.lineSeparator();
 
     public QrCodeGeneratorService(String destinationDir, String filenamePrefix, String formatName) {
         this.destinationDir = destinationDir;
