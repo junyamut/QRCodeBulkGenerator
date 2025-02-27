@@ -5,7 +5,9 @@
 *Description: Generates QR codes from provided list.*
 
 #### Notes
-* Place list in Excel (.xlsx) spreadsheet. Assume first row is column header.
+* Place list in Excel (.xlsx) spreadsheet. 
+* Assume first row is always column header.
+* Each row is one QR code. If row has multiple cells, it will be concatenated with \n as separator.
 * Spreadsheet location and QR code image destination directories are all pre-defined in configuration file.
 * Message dialog pop-up on error/successful completion of application.
 
