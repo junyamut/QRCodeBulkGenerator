@@ -37,8 +37,12 @@ public class LogDialogWindow extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
-    public static void printToLogDialog(String logMessage) {
-        Thread thread = new Thread(() -> System.out.println(logMessage));
+    public static void printToLogDialog(String logMessage, String... args) {
+        if (args.length != 0) {
+            logMessage = String.format(logMessage, (Object[]) args);
+        }
+        String finalLogMessage = logMessage;
+        Thread thread = new Thread(() -> System.out.println(finalLogMessage));
         thread.start();
     }
 

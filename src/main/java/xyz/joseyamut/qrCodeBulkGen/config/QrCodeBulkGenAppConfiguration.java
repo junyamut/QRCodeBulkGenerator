@@ -1,7 +1,6 @@
 package xyz.joseyamut.qrCodeBulkGen.config;
 
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-@Slf4j
 @Configuration
 public class QrCodeBulkGenAppConfiguration {
 
@@ -44,13 +42,19 @@ public class QrCodeBulkGenAppConfiguration {
 
     @PostConstruct
     public void dirCheck() {
+        String sourceDir = storeImageConfiguration.getDataStore().getSourceDir();
         String destinationDir = storeImageConfiguration.getDataStore().getDestinationDir();
+        Path qrCodeTextSourceDir = Paths.get(sourceDir);
         Path qrCodeOutputDir = Paths.get(destinationDir);
+
+        if (!Files.exists(qrCodeTextSourceDir)) {
+            File createDir = new File(sourceDir);
+            createDir.mkdirs();
+        }
+
         if (!Files.exists(qrCodeOutputDir)) {
             File createDir = new File(destinationDir);
-            if (createDir.mkdirs()) {
-                log.info("Created destination dir: {}", destinationDir);
-            }
+            createDir.mkdirs();
         }
     }
 

@@ -2,7 +2,6 @@ package xyz.joseyamut.qrCodeBulkGen.service;
 
 import xyz.joseyamut.qrCodeBulkGen.dialog.LogDialogWindow;
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import xyz.joseyamut.qrCodeBulkGen.QrCodeBulkGenAppException;
@@ -16,7 +15,6 @@ import java.util.Map;
 
 import static xyz.joseyamut.qrCodeBulkGen.service.WorkbookReaderService.NEWLINE;
 
-@Slf4j
 @Service
 public class QrCodeGeneratorService {
 
@@ -41,19 +39,22 @@ public class QrCodeGeneratorService {
         Map<String, String> fromWorkbook = workbookReaderService.getListFromWorkbook();
 
         assert fromWorkbook != null;
+        String workbookSize = String.valueOf(fromWorkbook.size());
         String successFormat = "%s QR codes in total were processed." + NEWLINE + NEWLINE +
                 "QR Codes generated as %s format are saved in %s folder.";
         String successMessage = String.format(successFormat,
-                fromWorkbook.size(),
+                workbookSize,
                 formatName.toUpperCase(),
                 destinationDir);
-        log.info("Found {} rows from the list.", fromWorkbook.size());
+        String logHeaders = "Generating QR codes.. . %s" +
+                "Destination folder: %s%s" +
+                "Found %s rows from the list: %s";
+        String logRow = "%s --- FILE SAVED %s";
 
         LogDialogWindow.displayLogDialog();
-        LogDialogWindow.printToLogDialog("Found (" + fromWorkbook.size() + ") rows from the list:" + NEWLINE);
+        LogDialogWindow.printToLogDialog(logHeaders, NEWLINE, destinationDir, NEWLINE, workbookSize, NEWLINE);
 
         try {
-            int counter = 1;
             for (Map.Entry<String, String> entry : fromWorkbook.entrySet()) {
                 BufferedImage bufferedImage = qrCodeEncoderService.generate(entry.getValue());
                 File outputfile = new File(destinationDir +
@@ -61,11 +62,7 @@ public class QrCodeGeneratorService {
                         "." + formatName);
                 ImageIO.write(bufferedImage, formatName, outputfile);
 
-                LogDialogWindow.printToLogDialog("--- " + counter +
-                        ".) Saved QR Code FILE (" +
-                        outputfile.getName() +
-                        ") TO " + destinationDir + NEWLINE);
-                counter++;
+                LogDialogWindow.printToLogDialog(logRow, outputfile.getName(), NEWLINE);
             }
         } catch (IOException e) {
             throw new QrCodeBulkGenAppException(e);
