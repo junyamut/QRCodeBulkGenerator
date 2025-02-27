@@ -1,5 +1,6 @@
 package xyz.joseyamut.qrCodeBulkGen.service;
 
+import xyz.joseyamut.qrCodeBulkGen.dialog.LogDialogWindow;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ public class QrCodeGeneratorService {
         Map<String, String> fromWorkbook = workbookReaderService.getListFromWorkbook();
 
         assert fromWorkbook != null;
-        String successFormat = "Found a total of %s rows from the list." + NEWLINE + NEWLINE +
+        String successFormat = "%s QR codes in total were processed." + NEWLINE + NEWLINE +
                 "QR Codes generated as %s format are saved in %s folder.";
         String successMessage = String.format(successFormat,
                 fromWorkbook.size(),
@@ -48,17 +49,27 @@ public class QrCodeGeneratorService {
                 destinationDir);
         log.info("Found {} rows from the list.", fromWorkbook.size());
 
-        fromWorkbook.forEach((key, value) -> {
-            try {
-                BufferedImage bufferedImage = qrCodeEncoderService.generate(value);
+        LogDialogWindow.displayLogDialog();
+        LogDialogWindow.printToLogDialog("Found (" + fromWorkbook.size() + ") rows from the list:" + NEWLINE);
+
+        try {
+            int counter = 1;
+            for (Map.Entry<String, String> entry : fromWorkbook.entrySet()) {
+                BufferedImage bufferedImage = qrCodeEncoderService.generate(entry.getValue());
                 File outputfile = new File(destinationDir +
-                        filenamePrefix + key +
+                        filenamePrefix + entry.getKey() +
                         "." + formatName);
                 ImageIO.write(bufferedImage, formatName, outputfile);
-            } catch (IOException e) {
-                throw new QrCodeBulkGenAppException(e);
+
+                LogDialogWindow.printToLogDialog("--- " + counter +
+                        ".) Saved QR Code FILE (" +
+                        outputfile.getName() +
+                        ") TO " + destinationDir + NEWLINE);
+                counter++;
             }
-        });
+        } catch (IOException e) {
+            throw new QrCodeBulkGenAppException(e);
+        }
 
         JOptionPane.showMessageDialog(null, successMessage, "QR Code Bulk Generator", JOptionPane.INFORMATION_MESSAGE);
     }

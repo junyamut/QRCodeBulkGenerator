@@ -20,8 +20,6 @@ public class QrCodeBulkGenApplication {
 			log.error("Unexpected error encountered: {}", rootCause);
 			JOptionPane.showMessageDialog(null, rootCause, "QR Code Bulk Generator", JOptionPane.WARNING_MESSAGE);
 		}
-
-		log.info("EXITING application.");
 	}
 
 }
