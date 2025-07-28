@@ -6,10 +6,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import xyz.joseyamut.qrCodeBulkGen.QrCodeBulkGenAppException;
+import xyz.joseyamut.qrCodeBulkGen.model.DataStore;
+import xyz.joseyamut.qrCodeBulkGen.model.WorkbookParam;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,16 +25,23 @@ public class WorkbookReaderService {
 
     private final String workbookName;
     private final String sourceDir;
+    private final int colMaxReadLimit;
+    private final int colValueLenBeforeTruncate;
+    private final int rowMaxReadLimit;
 
     public static final String NEWLINE = System.lineSeparator();
 
-    public WorkbookReaderService(String workbookName, String sourceDir) {
-        this.workbookName = workbookName;
-        this.sourceDir = sourceDir;
+    public WorkbookReaderService(DataStore dataStore, WorkbookParam workbookParam) {
+        this.workbookName = dataStore.getSrcWorkbookName();
+        this.sourceDir = dataStore.getSrcDir();
+        this.colMaxReadLimit = workbookParam.getColMaxReadLimit();
+        this.colValueLenBeforeTruncate = workbookParam.getColValueLenBeforeTruncate();
+        this.rowMaxReadLimit = workbookParam.getRowMaxReadLimit();
     }
 
     public Map<String, String> getListFromWorkbook() throws QrCodeBulkGenAppException {
         Path path = Paths.get(sourceDir + File.separator + workbookName);
+
         if (!Files.exists(path)) {
             throw new QrCodeBulkGenAppException("Can't find list!" + NEWLINE +
                     NEWLINE +
@@ -52,7 +62,9 @@ public class WorkbookReaderService {
                 int firstRow = sheet.getFirstRowNum();
                 int lastRow = sheet.getLastRowNum();
 
-                for (int index = firstRow + 1; index <= lastRow; index++) {
+                if (lastRow < 0) break; // Value of -1, no rows exist in the sheet.
+
+                for (int index = firstRow + 1; index <= rowMaxReadLimit; index++) { // Read up to set maximum rows only.
                     Row row = sheet.getRow(index);
                     Cell nameCell = row.getCell(0, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
                     String nameValue = getCellValue(nameCell).replaceAll("\\s", "");
@@ -61,7 +73,7 @@ public class WorkbookReaderService {
                         continue;
                     }
 
-                    for (int cellIndex = row.getFirstCellNum(); cellIndex < row.getLastCellNum(); cellIndex++) {
+                    for (int cellIndex = row.getFirstCellNum(); cellIndex < colMaxReadLimit; cellIndex++) { // Read up to set maximum columns only.
                         Cell cell = row.getCell(cellIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
                         rowValue.append(getCellValue(cell));
                     }
@@ -86,13 +98,14 @@ public class WorkbookReaderService {
 
         switch (cellType) {
             case STRING:
-                value += cell.getStringCellValue() + NEWLINE;
+                value += cell.getStringCellValue();
                 break;
             case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) {
-                    value += cell.getDateCellValue() + NEWLINE;
+                    value += cell.getDateCellValue();
                 } else {
-                    value += cell.getNumericCellValue() + NEWLINE;
+                    // If cell is formatted as Numeric this will get string value without the scientific notation
+                    value += BigDecimal.valueOf(cell.getNumericCellValue()).toPlainString();
                 }
                 break;
             case BOOLEAN:
@@ -100,7 +113,12 @@ public class WorkbookReaderService {
                 value += " " + NEWLINE;
         }
 
-        return value;
+        // Truncate only if extracted value is greater than truncation value.
+        if (value.length() > colValueLenBeforeTruncate) {
+            return value.substring(0, colValueLenBeforeTruncate) + NEWLINE;
+        }
+
+        return value + NEWLINE;
     }
 
 }

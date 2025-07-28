@@ -5,8 +5,11 @@ import lombok.Data;
 @Data
 public class DataStore {
 
-    public String workbookName;
-    public String sourceDir;
-    public String destinationDir;
+    private String srcWorkbookName;
+    private String dstWorkbookName;
+    private String srcDir;
+    private String dstDirImg;
+    private String dstDirWorkbook;
+    private boolean qrCodeToFile = false;
 
 }

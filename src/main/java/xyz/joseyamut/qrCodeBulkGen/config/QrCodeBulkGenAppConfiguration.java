@@ -21,8 +21,8 @@ public class QrCodeBulkGenAppConfiguration {
 
     @Bean
     public WorkbookReaderService workbookReaderService() {
-        return new WorkbookReaderService(storeImageConfiguration.getDataStore().getWorkbookName(),
-                storeImageConfiguration.getDataStore().getSourceDir());
+        return new WorkbookReaderService(storeImageConfiguration.getDataStore(),
+                storeImageConfiguration.getWorkbookParam());
     }
 
     @Bean
@@ -35,25 +35,32 @@ public class QrCodeBulkGenAppConfiguration {
 
     @Bean
     public QrCodeGeneratorService qrCodeGeneratorService() {
-        return new QrCodeGeneratorService(storeImageConfiguration.getDataStore().getDestinationDir(),
-                storeImageConfiguration.getImageParam().getFilenamePrefix(),
-                storeImageConfiguration.getImageParam().getFormatName());
+        return new QrCodeGeneratorService(storeImageConfiguration.getDataStore(),
+                storeImageConfiguration.getImageParam(),
+                storeImageConfiguration.getWorkbookParam());
     }
 
     @PostConstruct
     public void dirCheck() {
-        String sourceDir = storeImageConfiguration.getDataStore().getSourceDir();
-        String destinationDir = storeImageConfiguration.getDataStore().getDestinationDir();
+        String sourceDir = storeImageConfiguration.getDataStore().getSrcDir();
+        String destinationDirWorkbook = storeImageConfiguration.getDataStore().getDstDirWorkbook();
+        String destinationDirImg = destinationDirWorkbook + storeImageConfiguration.getDataStore().getDstDirImg();
         Path qrCodeTextSourceDir = Paths.get(sourceDir);
-        Path qrCodeOutputDir = Paths.get(destinationDir);
+        Path qrCodeOutputDirImg = Paths.get(destinationDirImg);
+        Path qrCodeOutputDirWorkbook = Paths.get(destinationDirWorkbook);
 
         if (!Files.exists(qrCodeTextSourceDir)) {
             File createDir = new File(sourceDir);
             createDir.mkdirs();
         }
 
-        if (!Files.exists(qrCodeOutputDir)) {
-            File createDir = new File(destinationDir);
+        if (!Files.exists(qrCodeOutputDirImg)) {
+            File createDir = new File(destinationDirImg);
+            createDir.mkdirs();
+        }
+
+        if (!Files.exists(qrCodeOutputDirWorkbook)) {
+            File createDir = new File(destinationDirWorkbook);
             createDir.mkdirs();
         }
     }

@@ -5,10 +5,21 @@ spring:
     active: dev
 
 qr-code:
+  workbook-param:
+    col-max-read-limit: 3
+    col-value-len-before-truncate: 30
+    col-header-names:
+      - ENCODED TEXT
+      - FILENAME
+      - QR CODE
+    row-max-read-limit: 10
   data-store:
-    workbook-name: "qr-code-list.xlsx"
-    source-dir: datastore/workbook/
-    destination-dir: datastore/qr-codes/
+    src-workbook-name: "qr-code-list-2.xlsx"
+    dst-workbook-name: "QRCodeList.xlsx"
+    src-dir: datastore/workbook/
+    dst-dir-img: images/
+    dst-dir-workbook: datastore/qr-codes/
+    qr-code-to-file: false
   image-param:
     format-name: jpg
     filename-prefix: QRCode-

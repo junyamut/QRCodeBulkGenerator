@@ -5,11 +5,11 @@ import lombok.Data;
 @Data
 public class ImageParam {
 
-    public String formatName;
-    public String filenamePrefix;
-    public int scale;
-    public int border;
-    public int lightColor;
-    public int darkColor;
+    private String formatName;
+    private String filenamePrefix;
+    private int scale;
+    private int border;
+    private int lightColor;
+    private int darkColor;
 
 }
