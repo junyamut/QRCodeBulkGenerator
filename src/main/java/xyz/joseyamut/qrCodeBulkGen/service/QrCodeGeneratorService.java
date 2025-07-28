@@ -39,7 +39,7 @@ public class QrCodeGeneratorService {
     private final String destinationWorkbookName;
     private final List<String> colHeaderNames;
     private final boolean isQrCodeToFile;
-    // Adjust row height and width column so QR codes are not scaled too small
+    // Adjust row height and column width, so QR codes are not scaled too small
     private static final int DEFAULT_COL_WIDTH = 5120*2;
     private static final float DEFAULT_ROW_HEIGHT = 200f;
 

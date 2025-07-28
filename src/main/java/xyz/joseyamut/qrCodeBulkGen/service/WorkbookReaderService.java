@@ -59,12 +59,16 @@ public class WorkbookReaderService {
             Workbook workbook = new XSSFWorkbook(fileInputStream);
 
             for (Sheet sheet : workbook) {
+                int rowLimit;
                 int firstRow = sheet.getFirstRowNum();
-                int lastRow = sheet.getLastRowNum();
+                int lastRow = rowLimit = sheet.getLastRowNum();
 
                 if (lastRow < 0) break; // Value of -1, no rows exist in the sheet.
+                if (rowMaxReadLimit <= lastRow ) { // Only follow rowMaxReadLimit if it is less than lastRow to avoid NPE.
+                    rowLimit = rowMaxReadLimit;    // Otherwise, rowLimit == lastRow always.
+                }
 
-                for (int index = firstRow + 1; index <= rowMaxReadLimit; index++) { // Read up to set maximum rows only.
+                for (int index = firstRow + 1; index <= rowLimit; index++) { // Read up to set maximum rows only.
                     Row row = sheet.getRow(index);
                     Cell nameCell = row.getCell(0, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
                     String nameValue = getCellValue(nameCell).replaceAll("\\s", "");
