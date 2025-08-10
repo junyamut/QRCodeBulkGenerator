@@ -12,14 +12,14 @@ qr-code:
       - ENCODED TEXT
       - FILENAME
       - QR CODE
-    row-max-read-limit: 10
+    row-max-read-limit: 500
   data-store:
-    src-workbook-name: "qr-code-list-2.xlsx"
+    src-workbook-name: "ListForEncoding.xlsx"
     dst-workbook-name: "QRCodeList.xlsx"
     src-dir: datastore/workbook/
     dst-dir-img: images/
     dst-dir-workbook: datastore/qr-codes/
-    qr-code-to-file: false
+    qr-code-to-file: true
   image-param:
     format-name: jpg
     filename-prefix: QRCode-

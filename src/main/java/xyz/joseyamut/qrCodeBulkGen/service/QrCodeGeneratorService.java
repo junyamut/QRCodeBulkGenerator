@@ -15,7 +15,6 @@ import xyz.joseyamut.qrCodeBulkGen.model.ImageParam;
 import xyz.joseyamut.qrCodeBulkGen.model.WorkbookParam;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.List;
@@ -56,27 +55,28 @@ public class QrCodeGeneratorService {
 
     @PostConstruct
     private void generateFromList() {
-        Map<String, String> fromWorkbook = workbookReaderService.getListFromWorkbook();
+        Map<String, String> listForEncoding = workbookReaderService.getListFromWorkbook();
 
-        assert fromWorkbook != null;
-        String workbookSize = String.valueOf(fromWorkbook.size());
+        assert listForEncoding != null;
+        String batchSize = String.valueOf(listForEncoding.size());
         String successFormat = "%s QR codes in total were processed."
                 + NEWLINE + NEWLINE +
-                "QR Codes generated have been saved in -- %s -- "
+                "QR Codes saved in worksheet ( %s ) "
                 + NEWLINE
-                + " at the [ %s ] folder.";
+                + " located at --> %s%s";
         String successMessage = String.format(successFormat,
-                workbookSize,
+                batchSize,
                 destinationWorkbookName,
-                destinationDirWorkbook);
-        String logHeaders = "Generating QR codes.. . %s" +
-                "Destination folder: %s%s" +
-                "Found %s rows from the list: %s";
+                destinationDirWorkbook,
+                NEWLINE);
+        String logHeaders = "Destination folder --> %s%s" +
+                "Found ( %s ) rows from the list. %s%s" +
+                "Generating QR codes.. . ";
         String logRow = "%s --- FILE SAVED %s";
 
         LogDialogWindow.displayLogDialog();
-        LogDialogWindow.printToLogDialog(logHeaders, NEWLINE, destinationDirWorkbook,
-                NEWLINE, workbookSize, NEWLINE);
+        LogDialogWindow.printToLogDialog(logHeaders, destinationDirWorkbook, NEWLINE,
+                batchSize, NEWLINE, NEWLINE);
 
         boolean writeToWorkbook = StringUtils.hasText(destinationDirWorkbook)
                 && StringUtils.hasText(destinationWorkbookName);
@@ -95,7 +95,7 @@ public class QrCodeGeneratorService {
                 writeSheetHeaders(sheet);
 
                 int qrCodesRowCount = 1;
-                for (Map.Entry<String, String> entry : fromWorkbook.entrySet()) {
+                for (Map.Entry<String, String> entry : listForEncoding.entrySet()) {
                     BufferedImage bufferedImage = qrCodeEncoderService.generate(entry.getValue());
                     String qrCodeFileName = filenamePrefix + entry.getKey() +
                             "." + formatName;
@@ -129,7 +129,7 @@ public class QrCodeGeneratorService {
             }
         }
 
-        JOptionPane.showMessageDialog(null, successMessage, "QR Code Bulk Generator", JOptionPane.INFORMATION_MESSAGE);
+        LogDialogWindow.printToLogDialog(successMessage);
     }
 
     private void writeSheetHeaders(Sheet sheet) {
