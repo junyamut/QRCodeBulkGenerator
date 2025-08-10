@@ -42,8 +42,7 @@ public class LogDialogWindow extends JFrame {
             logMessage = String.format(logMessage, (Object[]) args);
         }
         String finalLogMessage = logMessage;
-        Thread thread = new Thread(() -> System.out.println(finalLogMessage));
-        thread.start();
+        System.out.println(finalLogMessage);
     }
 
     public static void displayLogDialog() {
