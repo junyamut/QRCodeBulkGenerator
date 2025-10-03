@@ -1,18 +1,12 @@
 package xyz.joseyamut.qrCodeBulkGen.service;
 
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
-import org.apache.poi.xssf.usermodel.XSSFDrawing;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.util.StringUtils;
+import xyz.joseyamut.qrCodeBulkGen.config.StoreImageConfiguration;
 import xyz.joseyamut.qrCodeBulkGen.dialog.LogDialogWindow;
 import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import xyz.joseyamut.qrCodeBulkGen.QrCodeBulkGenAppException;
-import xyz.joseyamut.qrCodeBulkGen.model.DataStore;
-import xyz.joseyamut.qrCodeBulkGen.model.ImageParam;
-import xyz.joseyamut.qrCodeBulkGen.model.WorkbookParam;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -20,48 +14,40 @@ import java.io.*;
 import java.util.List;
 import java.util.Map;
 
-import static xyz.joseyamut.qrCodeBulkGen.service.WorkbookReaderService.NEWLINE;
-
 @Service
 public class QrCodeGeneratorService {
 
-    @Autowired
-    private WorkbookReaderService workbookReaderService;
+    private final StoreImageConfiguration storeImageConfiguration;
+    private final QrCodeEncoderService qrCodeEncoderService;
+    private final WorkbookReaderService workbookReaderService;
+    private final WorkbookWriterService workbookWriterService;
+    public static final String NEWLINE = System.lineSeparator();
 
-    @Autowired
-    private QrCodeEncoderService qrCodeEncoderService;
-
-    private final String destinationDirImg;
-    private final String filenamePrefix;
-    private final String formatName;
-    private final String destinationDirWorkbook;
-    private final String destinationWorkbookName;
-    private final List<String> colHeaderNames;
-    private final boolean isQrCodeToFile;
-    // Adjust row height and column width, so QR codes are not scaled too small
-    private static final int DEFAULT_COL_WIDTH = 5120*2;
-    private static final float DEFAULT_ROW_HEIGHT = 200f;
-
-    public QrCodeGeneratorService(DataStore dataStore, ImageParam imageParam,
-                                  WorkbookParam workbookParam) {
-        this.filenamePrefix = imageParam.getFilenamePrefix();
-        this.formatName = imageParam.getFormatName();
-        this.destinationDirImg = dataStore.getDstDirImg();
-        this.destinationDirWorkbook = dataStore.getDstDirWorkbook();
-        this.destinationWorkbookName = dataStore.getDstWorkbookName().trim();
-        this.colHeaderNames = workbookParam.getColHeaderNames();
-        this.isQrCodeToFile = dataStore.isQrCodeToFile();
+    public QrCodeGeneratorService(StoreImageConfiguration storeImageConfiguration, QrCodeEncoderService qrCodeEncoderService,
+                                  WorkbookReaderService workbookReaderService, WorkbookWriterService workbookWriterService) {
+        this.storeImageConfiguration = storeImageConfiguration;
+        this.qrCodeEncoderService = qrCodeEncoderService;
+        this.workbookReaderService = workbookReaderService;
+        this.workbookWriterService = workbookWriterService;
     }
 
     @PostConstruct
     private void generateFromList() {
+        String sourceFile = storeImageConfiguration.getDataStore().getSrcWorkbookName();
+        String filenamePrefix = storeImageConfiguration.getImageParam().getFilenamePrefix();
+        String formatName = storeImageConfiguration.getImageParam().getFormatName();
+        String destinationDirImg = storeImageConfiguration.getDataStore().getDstDirImg();
+        String destinationDirWorkbook = storeImageConfiguration.getDataStore().getDstDirWorkbook();
+        String destinationWorkbookName = storeImageConfiguration.getDataStore().getDstWorkbookName().trim();
+        boolean isQrCodeToFile = storeImageConfiguration.getDataStore().isQrCodeToFile();
+        List<String> colHeaderNames = storeImageConfiguration.getWorkbookParam().getColHeaderNames();
         Map<String, String> listForEncoding = workbookReaderService.getListFromWorkbook();
 
         assert listForEncoding != null;
         String batchSize = String.valueOf(listForEncoding.size());
-        String successFormat = "%s QR codes in total were processed."
+        String successFormat = "( %s ) QR codes were processed in total."
                 + NEWLINE + NEWLINE +
-                "QR Codes saved in worksheet ( %s ) "
+                "QR Codes saved in worksheet --> %s"
                 + NEWLINE
                 + " located at --> %s%s";
         String successMessage = String.format(successFormat,
@@ -69,30 +55,32 @@ public class QrCodeGeneratorService {
                 destinationWorkbookName,
                 destinationDirWorkbook,
                 NEWLINE);
-        String logHeaders = "Destination folder --> %s%s" +
+        String logHeaders = "Worksheet source list --> " + sourceFile + "%s" +
                 "Found ( %s ) rows from the list. %s%s" +
                 "Generating QR codes.. . ";
         String logRow = "%s --- FILE SAVED %s";
 
         LogDialogWindow.displayLogDialog();
-        LogDialogWindow.printToLogDialog(logHeaders, destinationDirWorkbook, NEWLINE,
+        LogDialogWindow.printToLogDialog(logHeaders, NEWLINE,
                 batchSize, NEWLINE, NEWLINE);
 
         boolean writeToWorkbook = StringUtils.hasText(destinationDirWorkbook)
                 && StringUtils.hasText(destinationWorkbookName);
 
         if (writeToWorkbook) {
-            Workbook dstWorkbook = new XSSFWorkbook();
-            Sheet sheet = dstWorkbook.createSheet("QR Code List");
-            Font font = dstWorkbook.createFont();
-            font.setBold(true);
-            CellStyle cellStyle = dstWorkbook.createCellStyle();
-            cellStyle.setWrapText(true);
-            cellStyle.setFont(font);
+            workbookWriterService.createWorkbookWithInitialSheet();
+            workbookWriterService.setNameOfSheetAtIndex(0, "QR Codes List");
+            // Initialize a Font object and set attributes
+            workbookWriterService.createFont();
+            workbookWriterService.getFont().setBold(true);
+            // Initialize a CellStyle object and set attributes
+            workbookWriterService.createCellStyle();
+            workbookWriterService.getCellStyle().setWrapText(true);
+            workbookWriterService.getCellStyle().setFont(workbookWriterService.getFont());
 
             try {
                 // Write sheet column headers
-                writeSheetHeaders(sheet);
+                workbookWriterService.writeSheetHeaders(colHeaderNames);
 
                 int qrCodesRowCount = 1;
                 for (Map.Entry<String, String> entry : listForEncoding.entrySet()) {
@@ -100,13 +88,12 @@ public class QrCodeGeneratorService {
                     String qrCodeFileName = filenamePrefix + entry.getKey() +
                             "." + formatName;
                     // Write text data to rows
-                    writeRowTextData(sheet, qrCodesRowCount,
-                            entry.getValue(), qrCodeFileName,
-                            cellStyle);
+                    workbookWriterService.writeRowTextData(qrCodesRowCount,
+                            entry.getValue(), qrCodeFileName);
                     // Write QR code image to workbook
-                    int qrCodeImagePicture = dstWorkbook.addPicture(bufferedImageToByteArray(bufferedImage),
+                    int qrCodeImagePicture = workbookWriterService.addPicture(bufferedImageToByteArray(bufferedImage, formatName),
                             Workbook.PICTURE_TYPE_JPEG);
-                    writeRowQrCode(sheet, qrCodesRowCount, qrCodeImagePicture);
+                    workbookWriterService.writeRowQrCode(qrCodesRowCount, qrCodeImagePicture);
                     qrCodesRowCount++;
 
                     if (isQrCodeToFile) {
@@ -121,9 +108,9 @@ public class QrCodeGeneratorService {
 
                 File dstFile = new File(destinationDirWorkbook, destinationWorkbookName);
                 FileOutputStream fileOutputStream = new FileOutputStream(dstFile);
-                dstWorkbook.write(fileOutputStream);
+                workbookWriterService.write(fileOutputStream);
                 fileOutputStream.close();
-                dstWorkbook.close();
+                workbookWriterService.close();
             } catch (IOException e) {
                 throw new QrCodeBulkGenAppException(e);
             }
@@ -132,40 +119,7 @@ public class QrCodeGeneratorService {
         LogDialogWindow.printToLogDialog(successMessage);
     }
 
-    private void writeSheetHeaders(Sheet sheet) {
-        int headersCount = 0;
-        Row headersRow = sheet.createRow(0); // Headers row is at 0 always
-        for (String headers : colHeaderNames) {
-            Cell headersRowCell = headersRow.createCell(headersCount);
-            headersRowCell.setCellValue(headers.trim());
-            sheet.setColumnWidth(headersCount, DEFAULT_COL_WIDTH);
-            headersCount++;
-        }
-    }
-
-    private void writeRowTextData(Sheet sheet, int rowIndex,
-                                  String cell1Value, String cell2Value,
-                                  CellStyle cellStyle) {
-        Row qrCodeRow = sheet.createRow(rowIndex);
-        qrCodeRow.setHeightInPoints(DEFAULT_ROW_HEIGHT);
-        Cell cell1 = qrCodeRow.createCell(0); // At the 1st column
-        cell1.setCellValue(cell1Value); // Value of the encoded string in the QR Code
-        cell1.setCellStyle(cellStyle);
-        Cell cell2 = qrCodeRow.createCell(1); // At the 2nd column
-        cell2.setCellValue(cell2Value); // Filename of the QR Code JPEG image
-    }
-
-    private void writeRowQrCode(Sheet sheet, int rowIndex, int qrCodeImagePicture) {
-        XSSFDrawing xssfDrawing = (XSSFDrawing) sheet.createDrawingPatriarch();
-        XSSFClientAnchor xssfClientAnchor = new XSSFClientAnchor();
-        xssfClientAnchor.setCol1(2); // Anchor at the 3rd column
-        xssfClientAnchor.setCol2(3); // End anchor at the next column
-        xssfClientAnchor.setRow1(rowIndex); // Anchor at this row inddex
-        xssfClientAnchor.setRow2(rowIndex+1); // End anchor at the next row
-        xssfDrawing.createPicture(xssfClientAnchor, qrCodeImagePicture);
-    }
-
-    private byte[] bufferedImageToByteArray(BufferedImage bufferedImage) throws IOException {
+    private byte[] bufferedImageToByteArray(BufferedImage bufferedImage, String formatName) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         ImageIO.write(bufferedImage, formatName, byteArrayOutputStream);
         return byteArrayOutputStream.toByteArray();

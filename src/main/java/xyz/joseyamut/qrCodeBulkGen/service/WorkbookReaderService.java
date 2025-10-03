@@ -6,8 +6,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import xyz.joseyamut.qrCodeBulkGen.QrCodeBulkGenAppException;
-import xyz.joseyamut.qrCodeBulkGen.model.DataStore;
-import xyz.joseyamut.qrCodeBulkGen.model.WorkbookParam;
+import xyz.joseyamut.qrCodeBulkGen.config.StoreImageConfiguration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,27 +18,23 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import static xyz.joseyamut.qrCodeBulkGen.service.QrCodeGeneratorService.NEWLINE;
+
 @Slf4j
 @Service
 public class WorkbookReaderService {
 
-    private final String workbookName;
-    private final String sourceDir;
-    private final int colMaxReadLimit;
-    private final int colValueLenBeforeTruncate;
-    private final int rowMaxReadLimit;
+    private final StoreImageConfiguration storeImageConfiguration;
 
-    public static final String NEWLINE = System.lineSeparator();
-
-    public WorkbookReaderService(DataStore dataStore, WorkbookParam workbookParam) {
-        this.workbookName = dataStore.getSrcWorkbookName();
-        this.sourceDir = dataStore.getSrcDir();
-        this.colMaxReadLimit = workbookParam.getColMaxReadLimit();
-        this.colValueLenBeforeTruncate = workbookParam.getColValueLenBeforeTruncate();
-        this.rowMaxReadLimit = workbookParam.getRowMaxReadLimit();
+    public WorkbookReaderService(StoreImageConfiguration storeImageConfiguration) {
+        this.storeImageConfiguration = storeImageConfiguration;
     }
 
     public Map<String, String> getListFromWorkbook() throws QrCodeBulkGenAppException {
+        String workbookName = storeImageConfiguration.getDataStore().getSrcWorkbookName();
+        String sourceDir = storeImageConfiguration.getDataStore().getSrcDir();
+        int colMaxReadLimit = storeImageConfiguration.getWorkbookParam().getColMaxReadLimit();
+        int rowMaxReadLimit = storeImageConfiguration.getWorkbookParam().getRowMaxReadLimit();
         Path path = Paths.get(sourceDir + File.separator + workbookName);
 
         if (!Files.exists(path)) {
@@ -96,6 +91,7 @@ public class WorkbookReaderService {
     }
 
     private String getCellValue(Cell cell) {
+        int colValueLenBeforeTruncate = storeImageConfiguration.getWorkbookParam().getColValueLenBeforeTruncate();
         String value = "";
         CellType cellType = cell.getCellType()
                 .equals(CellType.FORMULA) ? cell.getCachedFormulaResultType() : cell.getCellType();

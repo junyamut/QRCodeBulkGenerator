@@ -3,32 +3,27 @@ package xyz.joseyamut.qrCodeBulkGen.service;
 import io.nayuki.qrcodegen.QrCode;
 import org.springframework.stereotype.Service;
 import xyz.joseyamut.qrCodeBulkGen.QrCodeBulkGenAppException;
+import xyz.joseyamut.qrCodeBulkGen.config.StoreImageConfiguration;
 
 import java.awt.image.BufferedImage;
 
 @Service
 public class QrCodeEncoderService {
 
-    private final int scale;
-    private final int border;
-    private final int lightColor;
-    private final int darkColor;
+    private final StoreImageConfiguration storeImageConfiguration;
 
-    public QrCodeEncoderService(int scale, int border, int lightColor, int darkColor) {
-        this.scale = scale;
-        this.border = border;
-        this.lightColor = lightColor;
-        this.darkColor = darkColor;
+    public QrCodeEncoderService(StoreImageConfiguration storeImageConfiguration) {
+        this.storeImageConfiguration = storeImageConfiguration;
     }
 
     public BufferedImage generate(String qrCodeText) {
         QrCode qrCode = QrCode.encodeText(qrCodeText, QrCode.Ecc.MEDIUM);
 
         return toImage(qrCode,
-                scale,
-                border,
-                lightColor,
-                darkColor);
+                storeImageConfiguration.getImageParam().getScale(),
+                storeImageConfiguration.getImageParam().getBorder(),
+                storeImageConfiguration.getImageParam().getLightColor(),
+                storeImageConfiguration.getImageParam().getDarkColor());
     }
 
     private BufferedImage toImage(QrCode qrCode, int scale, int border, int lightColor, int darkColor) throws QrCodeBulkGenAppException {
